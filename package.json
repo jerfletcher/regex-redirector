@@ -1,0 +1,18 @@
+{
+  "name": "regex-redirector",
+  "version": "1.0.0",
+  "description": "Chrome extension for regex-based URL redirection",
+  "main": "dist/background.js",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "copy-webpack-plugin": "^13.0.0",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1",
+    "eslint": "^9.28.0"
+  }
+}
