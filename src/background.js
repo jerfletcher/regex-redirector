@@ -196,6 +196,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     getRedirectRules((rules) => {
       let shouldShow = false;
       let tabSet = matchedRuleIdsPerTab.get(tabId);
+      // If we already have a match in this tab, use it
       for (let idx = 0; idx < rules.length; idx++) {
         const rule = rules[idx];
         const ruleId = rule.id;
@@ -204,7 +205,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           break;
         }
       }
-      cb(shouldShow);
+      // If not, check the tab's URL directly for a match
+      if (!shouldShow) {
+        chrome.tabs.get(tabId, (tab) => {
+          if (chrome.runtime.lastError || !tab || !tab.url) {
+            cb(false);
+            return;
+          }
+          for (let idx = 0; idx < rules.length; idx++) {
+            const rule = rules[idx];
+            if (rule.enabled && rule.regex) {
+              try {
+                const re = new RegExp(rule.regex);
+                if (re.test(tab.url)) {
+                  cb(true);
+                  return;
+                }
+              } catch (e) {}
+            }
+          }
+          cb(false);
+        });
+      } else {
+        cb(true);
+      }
     });
   }
 

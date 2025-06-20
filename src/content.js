@@ -54,23 +54,42 @@
       if (document.body) document.body.style.paddingTop = '';
     }
   }
+  // On load, always ask background if banner should be shown (by redirect rule match)
+  chrome.runtime.sendMessage({ action: 'shouldShowBanner' }, (response) => {
+    if (response && response.show) {
+      showBanner();
+    } else {
+      hideBanner();
+    }
+  });
 
 
-  // Listen for shouldShowBanner message from the background script
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg && msg.action === 'shouldShowBanner') {
-      if (msg.show) {
+  // Helper to update banner after DOM is ready
+  function updateBannerFromBackground() {
+    chrome.runtime.sendMessage({ action: 'shouldShowBanner' }, (response) => {
+      if (response && response.show) {
         showBanner();
       } else {
         hideBanner();
       }
+    });
+  }
+
+  // Listen for push events and always re-query background for banner state
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg && (msg.action === 'shouldShowBanner' || msg.type === 'rulesChanged')) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateBannerFromBackground, { once: true });
+      } else {
+        updateBannerFromBackground();
+      }
     }
   });
 
-  // On content script load, ask background if banner should be shown
-  chrome.runtime.sendMessage({ action: 'shouldShowBanner' }, (response) => {
-    if (response && response.show) {
-      showBanner();
-    }
-  });
+  // On content script load, ask background if banner should be shown, after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateBannerFromBackground, { once: true });
+  } else {
+    updateBannerFromBackground();
+  }
 })();
